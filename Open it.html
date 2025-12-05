@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Message</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --glow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  html,body{height:100%;margin:0;}
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(1000px 600px at 10% 10%, rgba(255,255,255,0.02), transparent),
+      radial-gradient(800px 400px at 90% 90%, rgba(255,255,255,0.01), transparent),
+      var(--bg);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    overflow:hidden;
+  }
+
+  /* Large colorful text */
+  .big {
+    font-weight: 900;
+    font-size: clamp(48px, 18vw, 220px);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    text-transform: none;
+    background: linear-gradient(90deg,
+      #ff3b30, #ff9500, #ffcc00, #34c759, #5ac8fa, #5856d6, #ff2d95);
+    background-size: 400% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 8px 30px rgba(0,0,0,0.7));
+    text-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    animation: slideGradient 6s linear infinite;
+    transform: translateZ(0);
+    position: relative;
+    padding: 8px 18px;
+    border-radius: 12px;
+  }
+
+  @keyframes slideGradient{
+    0%{ background-position:0% 50% }
+    50%{ background-position:100% 50% }
+    100%{ background-position:0% 50% }
+  }
+
+  /* Sparkle container sits on top */
+  .sparkles {
+    position: absolute;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+
+  .spark {
+    position: absolute;
+    width:8px;
+    height:8px;
+    background: radial-gradient(circle at 30% 30%, #fff 0 15%, rgba(255,255,255,0.6) 20%, transparent 40%);
+    border-radius:50%;
+    opacity:0;
+    transform: scale(0.4) rotate(0deg);
+    mix-blend-mode: screen;
+    will-change: transform, opacity, left, top;
+  }
+
+  /* occasional twinkle pseudo */
+  .twinkle {
+    position:absolute;
+    width:22px;height:22px;
+    opacity:0;
+    transform: scale(0.6);
+    filter: blur(.6px);
+    pointer-events:none;
+  }
+
+  /* small instruction removed to keep only the word visible */
+</style>
+</head>
+<body>
+  <div class="wrapper" aria-hidden="false" style="position:relative;">
+    <div class="big" id="message">fuck you</div>
+    <div class="sparkles" id="sparkles"></div>
+  </div>
+
+<script>
+  // Create sparkles that float around the text
+  const SP_COUNT = 36;
+  const sparkles = document.getElementById('sparkles');
+  const msg = document.getElementById('message');
+
+  // Helper random
+  const rand = (a,b) => Math.random()*(b-a)+a;
+
+  // Get bounding area around the text to place sparkles
+  function placeSparkle(el, sp){
+    const r = el.getBoundingClientRect();
+    // expand a bit around the text
+    const padX = Math.max(30, r.width * 0.12);
+    const padY = Math.max(20, r.height * 0.18);
+    const left = rand(r.left - padX, r.right + padX);
+    const top  = rand(r.top - padY, r.bottom + padY);
+    sp.style.left = (left) + 'px';
+    sp.style.top  = (top) + 'px';
+  }
+
+  // create spark elements
+  for(let i=0;i<SP_COUNT;i++){
+    const s = document.createElement('div');
+    s.className = 'spark';
+    // random pastel-ish tint via radial gradient overlay
+    const hues = [
+      'rgba(255,59,48,0.95)',
+      'rgba(255,149,0,0.95)',
+      'rgba(255,204,0,0.95)',
+      'rgba(52,199,89,0.95)',
+      'rgba(90,200,250,0.95)',
+      'rgba(88,86,214,0.95)',
+      'rgba(255,45,149,0.95)'
+    ];
+    const tint = hues[Math.floor(Math.random()*hues.length)];
+    s.style.background = `radial-gradient(circle at 30% 30%, #fff 0 12%, ${tint} 20%, transparent 50%)`;
+    s.style.width = s.style.height = `${rand(6,12)}px`;
+    sparkles.appendChild(s);
+
+    // place initial and animate
+    placeSparkle(msg, s);
+    animateSparkle(s, rand(1600,4200), rand(0,1200));
+  }
+
+  function animateSparkle(el, duration=2000, delay=0){
+    // random motion and opacity pulses
+    const startLeft = parseFloat(el.style.left || 0);
+    const startTop  = parseFloat(el.style.top || 0);
+    const dx = rand(-60,60);
+    const dy = rand(-48,48);
+    const rot = rand(-360,360);
+    // animate using Web Animations API
+    el.animate([
+      { transform: `translate3d(0,0,0) scale(${rand(0.5,0.9)}) rotate(0deg)`, opacity:0 },
+      { transform: `translate3d(${dx/2}px,${dy/2}px,0) scale(${rand(1,1.25)}) rotate(${rot/2}deg)`, opacity:1 },
+      { transform: `translate3d(${dx}px,${dy}px,0) scale(${rand(0.6,0.95)}) rotate(${rot}deg)`, opacity:0 }
+    ], {
+      duration: duration,
+      delay: delay,
+      iterations: Infinity,
+      easing: 'cubic-bezier(.2,.8,.2,1)'
+    });
+  }
+
+  // occasional larger twinkles
+  function spawnTwinkle(){
+    const t = document.createElement('div');
+    t.className = 'twinkle';
+    const r = msg.getBoundingClientRect();
+    const left = rand(r.left - 40, r.right + 40);
+    const top = rand(r.top - 30, r.bottom + 30);
+    t.style.left = left + 'px';
+    t.style.top  = top + 'px';
+    // gradient star-like look via SVG data URI
+    const color = ['#fff','#ffd700','#ff66cc','#7df9ff'][Math.floor(Math.random()*4)];
+    const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><filter id='f' x='-50%' y='-50%' width='200%' height='200%'><feGaussianBlur stdDeviation='1.8' result='b'/></filter><g filter='url(#f)'><circle cx='12' cy='12' r='5' fill='${color}'/></g></svg>`);
+    t.style.backgroundImage = `url("data:image/svg+xml;utf8,${svg}")`;
+    t.style.width = t.style.height = `${rand(16,28)}px`;
+    sparkles.appendChild(t);
+
+    t.animate([
+      { opacity:0, transform:'scale(0.6) rotate(0deg)' },
+      { opacity:1, transform:'scale(1.05) rotate(18deg)' },
+      { opacity:0, transform:'scale(0.4) rotate(36deg)' }
+    ], { duration: 1200 + Math.random()*800, easing:'ease-out' });
+
+    // remove after animation
+    setTimeout(()=> t.remove(), 2200 + Math.random()*1000);
+  }
+
+  // periodically spawn twinkles near the text
+  setInterval(spawnTwinkle, 900 + Math.random()*700);
+
+  // Reposition sparkles when window resizes (so they stay near text)
+  let repositionTimer = null;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(repositionTimer);
+    repositionTimer = setTimeout(()=>{
+      const items = document.querySelectorAll('.spark');
+      items.forEach(s => placeSparkle(msg, s));
+    }, 180);
+  });
+
+  // Optional: mild pulsation on the text for life
+  msg.animate([
+    { transform: 'scale(1)' },
+    { transform: 'scale(1.03)' },
+    { transform: 'scale(1)' }
+  ], { duration: 2200, iterations: Infinity, easing: 'ease-in-out' });
+
+  // Make sure the container uses absolute coords relative to viewport
+  // so sparkles align correctly (they are positioned in viewport coords)
+  const wrapper = document.querySelector('.wrapper');
+  wrapper.style.position = 'relative';
+  // convert element coords to page coords; sparkles use page coords so no change needed
+</script>
+</body>
+</html>
